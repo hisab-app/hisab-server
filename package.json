@@ -1,7 +1,7 @@
 {
-  "name": "node-js-getting-started",
+  "name": "hisab-server",
   "version": "0.2.5",
-  "description": "A sample Node.js app using Express 4",
+  "description": "Hisab server for push notifications",
   "engines": {
     "node": "5.9.1"
   },
@@ -10,17 +10,21 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "ejs": "2.4.1",
-    "express": "4.13.3"
+    "firebase-admin": "^4.1.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/heroku/node-js-getting-started"
+    "url": "https://github.com/hisab-app/hisab-server"
   },
   "keywords": [
     "node",
     "heroku",
-    "express"
+    "hisab",
+    "money",
+    "split",
+    "transaction management",
+    "bill",
+    "friends"
   ],
   "license": "MIT"
 }

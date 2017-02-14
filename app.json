@@ -1,8 +1,17 @@
 {
-  "name": "Start on Heroku: Node.js",
-  "description": "A barebones Node.js app using Express 4",
-  "repository": "https://github.com/heroku/node-js-getting-started",
+  "name": "Hisab Server",
+  "description": "Server for Hisab android application",
+  "repository": "https://github.com/hisab-app/hisab-server",
   "logo": "http://node-js-sample.herokuapp.com/node.svg",
-  "keywords": ["node", "express", "static"],
+ "keywords": [
+    "node",
+    "heroku",
+    "hisab",
+    "money",
+    "split",
+    "transaction management",
+    "bill",
+    "friends"
+  ],
   "image": "heroku/nodejs"
 }
