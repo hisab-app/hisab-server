@@ -25,6 +25,20 @@ var sendNotifications = function (tokens, payload) {
     }
 };
 
+var getExpensePayload = function (expense, group) {
+    var payload;
+    payload = {
+        'action': '1', //added
+        'desc': expense.description,
+        'owner_name': expense.owner.name,
+        'owner_id': expense.owner.id,
+        'timestamp': expense.createdOn.toString(),
+        'amount': expense.amount.toString(),
+        'group_name': group.name,
+        'group_id': group.id
+    };
+    return payload;
+};
 /*
  * fetch all groups and store key,path to node value in groups dictionary
  */
@@ -52,7 +66,7 @@ users_ref.on('child_added', function (user, prevChildKey) {
 var expenses_ref = db.ref('expenses');
 var shareWith_ref = db.ref('shareWith');
 expenses_ref.once('value', function (expensesSnap) {
-
+    
     expensesSnap.forEach(function (groupExpenses) {
         var group_key = groupExpenses.key;
         //all ok
@@ -64,9 +78,11 @@ expenses_ref.once('value', function (expensesSnap) {
                 if (groups[group_key]) {
                     groups_ref.child(groups[group_key]).once('value', function (groupSnap) {
                         //collect registration tokens
-                        var tokens_to_inform, group_owner, payload;
+                        var tokens_to_inform, group_owner, payload, group;
                         tokens_to_inform = [];
-                        group_owner = groupSnap.val().moderator;
+                        group = groupSnap.val();
+                        group.id = group_key;
+                        group_owner = group.moderator;
                         if (group_owner) {
                             if (tokens[group_owner.id]) { tokens_to_inform.push(tokens[group_owner.id]); }
                         }
@@ -77,9 +93,7 @@ expenses_ref.once('value', function (expensesSnap) {
                             }
                         });
                         
-                        payload = {
-                            'desc': tmpExpense.description
-                        };
+                        payload = getExpensePayload(tmpExpense, group);
                         sendNotifications(tokens_to_inform, payload);
                     });
                 }
