@@ -18,9 +18,9 @@ var sendNotifications = function (tokens, payload) {
         firebase.messaging().sendToDevice(tokens, payload).then(function (response) {
             // See the MessagingDevicesResponse reference documentation for
             // the contents of response.
-            console.log("Successfully sent message:", response);
+            console.log("Successfully sent message:", response.successCount);
         }).catch(function (error) {
-            console.log("Error sending message:", error);
+            console.log("Error sending message:", error.code);
         });
     }
 };
