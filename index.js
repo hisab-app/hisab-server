@@ -28,10 +28,11 @@ var sendNotifications = function (tokens, payload) {
 var getExpensePayload = function (expense, group) {
     var payload;
     payload = {
-        'action': '1', //added
+        'type': '1', //added
         'desc': expense.description,
         'owner_name': expense.owner.name,
         'owner_id': expense.owner.id,
+        'expense_id': expense.id,
         'timestamp': expense.createdOn.toString(),
         'amount': expense.amount.toString(),
         'group_name': group.name,
@@ -40,11 +41,21 @@ var getExpensePayload = function (expense, group) {
     return payload;
 };
 /*
- * fetch all groups and store key,path to node value in groups dictionary
+ * fetch all groups and store key,path to node value in groups map
  */
 var groups_ref = db.ref('groups');
 var groups = {};
-groups_ref.on('child_added', function (userGroups, preChildKey) {
+/**
+We need to get a group's detail(moderator, name etc.) if we only have its Id, 
+for this we are maintaining a map(dictionary or object) whose key is group Id and value will be a path to group's detail.
+
+set listeners on this passed in users group list.
+if a new group is added, then update the gloabl groups map
+if a group is removed remove that 
+
+NOTE: we might be getting the groups repeatedly (in case the group is shared with multiple users)
+**/
+groups_ref.on('child_added', function (userGroups, prevChildKey) {
     userGroups.forEach(function (group) {
         groups[group.key] = userGroups.key + '/' + group.key;
     });
@@ -73,6 +84,7 @@ expenses_ref.once('value', function (expensesSnap) {
         expenses_ref.child(group_key).on('child_added', function (newExpense, prevChildKey) {
             var tmpExpense;
             tmpExpense = newExpense.val();
+            tmpExpense.id = newExpense.key;
             shareWith_ref.child(group_key).once('value', function (usersSnap) {
                 //if the group exists
                 if (groups[group_key]) {
@@ -83,19 +95,36 @@ expenses_ref.once('value', function (expensesSnap) {
                         group = groupSnap.val();
                         group.id = group_key;
                         group_owner = group.moderator;
+                        var collectTokensAndPush = function () {
+                            usersSnap.forEach(function (user) {
+                                var cur_user = user.val();
+                                if (cur_user) {
+                                    if (tokens[cur_user.id]) { tokens_to_inform.push(tokens[cur_user.id]); }
+                                }
+                            });
+                            payload = getExpensePayload(tmpExpense, group);
+                            console.log('sending to' + tokens_to_inform);
+                            sendNotifications(tokens_to_inform, payload);
+                        };
                         if (group_owner) {
-                            if (tokens[group_owner.id]) { tokens_to_inform.push(tokens[group_owner.id]); }
+                            // check if the moderator has the group in his group list
+                            groups_ref.child(group_owner.id).on('value', function (groups) {
+                                groups.forEach(function (group) {
+                                    if (group.key === group_key) {
+                                        if (tokens[group_owner.id]) {
+                                            tokens_to_inform.push(tokens[group_owner.id]);
+                                        }
+                                    }
+                                });
+                                collectTokensAndPush();
+                            });
+                        } else {
+                            collectTokensAndPush();
                         }
-                        usersSnap.forEach(function (user) {
-                            var cur_user = user.val();
-                            if (cur_user) {
-                                if (tokens[cur_user.id]) { tokens_to_inform.push(tokens[cur_user.id]); }
-                            }
-                        });
                         
-                        payload = getExpensePayload(tmpExpense, group);
-                        sendNotifications(tokens_to_inform, payload);
                     });
+                } else {
+                    console.log('group not exist');
                 }
             });
         });
